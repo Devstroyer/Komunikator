@@ -28,12 +28,14 @@ public class ClientThread implements Runnable{
         this.clientName="notSet";
         this.socket=socket;
         this.out =new PrintWriter(socket.getOutputStream(), true);
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
         
         //Dodanie nowego uzytkownika i powiadomienie reszty
-        KomunikatorServ.list.add(this);
-        for(int i=0;i<KomunikatorServ.list.size();i++){
-                    KomunikatorServ.list.get(i).send("message:"+clientName+ " has conected");
+        synchronized(KomunikatorServ.list) {
+            KomunikatorServ.list.add(this);
+            for(int i=0;i<KomunikatorServ.list.size();i++){
+                        KomunikatorServ.list.get(i).send("message:"+clientName+ " has conected");
+            }
         }
     }
 

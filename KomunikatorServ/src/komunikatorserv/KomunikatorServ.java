@@ -5,20 +5,19 @@
  */
 package komunikatorserv;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  *
  * @author Krzyś
  */
 public class KomunikatorServ {
-    public static ArrayList<ClientThread> list = new ArrayList<>();
+    public static final List<ClientThread> list = Collections.synchronizedList(new ArrayList<>());
     /**
      * @param args the command line arguments
      */

@@ -112,9 +112,10 @@ public class KomFrame extends javax.swing.JFrame {
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         if(watek==null){
             try {
-            soc = new Socket("87.207.197.63",8080);
+            //soc = new Socket("87.207.197.63",8080);
+            soc = new Socket("127.0.0.1",8080);
             out = new PrintWriter(soc.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(soc.getInputStream()));
+            in = new BufferedReader(new InputStreamReader(soc.getInputStream(), "UTF-8"));
             watek = new Thread(new Czytacz(in,jTextArea1));
             watek.start();
             } catch (IOException ex) {
