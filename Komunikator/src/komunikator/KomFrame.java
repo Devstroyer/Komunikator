@@ -6,23 +6,22 @@
 package komunikator;
 
 import java.awt.event.KeyEvent;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import komunikator.messages.Message;
+import komunikator.messages.MsgType;
 
 /**
  *
  * @author Krzyś
  */
-public class KomFrame extends javax.swing.JFrame {
-
-    
-    PrintWriter out;
-    BufferedReader in;
+public class KomFrame extends javax.swing.JFrame {    
+    ObjectOutputStream out;
+    ObjectInputStream in;
     Socket soc;
     Thread watek;
     /**
@@ -61,6 +60,11 @@ public class KomFrame extends javax.swing.JFrame {
         });
 
         jButton1.setText("jButton1");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
 
         jButton2.setText("Polacz");
         jButton2.addActionListener(new java.awt.event.ActionListener() {
@@ -114,8 +118,8 @@ public class KomFrame extends javax.swing.JFrame {
             try {
             //soc = new Socket("87.207.197.63",8080);
             soc = new Socket("127.0.0.1",8080);
-            out = new PrintWriter(soc.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(soc.getInputStream(), "UTF-8"));
+            out = new ObjectOutputStream(soc.getOutputStream());
+            in = new ObjectInputStream(soc.getInputStream());
             watek = new Thread(new Czytacz(in,jTextArea1));
             watek.start();
             } catch (IOException ex) {
@@ -128,17 +132,8 @@ public class KomFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jTextField2KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField2KeyPressed
-        if(evt.getKeyCode()== KeyEvent.VK_ENTER){
-            if(jTextField2.getText().length()>6 && jTextField2.getText().substring(0,6).equals("/name ")){
-                out.println("name:"+jTextField2.getText().substring(6));
-            }
-            else if(jTextField2.getText().length()==6 && jTextField2.getText().substring(0,6).equals("/users")){
-                out.println("users:");
-            }
-            else{
-                out.println("message:"+jTextField2.getText());
-            }
-            jTextField2.setText("");
+        if(evt.getKeyCode()== KeyEvent.VK_ENTER && !jTextField2.getText().isEmpty()){
+            sendCurrentMessage();
         }
     }//GEN-LAST:event_jTextField2KeyPressed
 
@@ -146,6 +141,44 @@ public class KomFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField2ActionPerformed
 
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        sendCurrentMessage();
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void sendCurrentMessage() {
+        if (!jTextField2.getText().isEmpty()) {
+            Message toSend;
+            if(jTextField2.getText().length()>6 && jTextField2.getText().substring(0,6).equals("/name ")){
+                toSend = createNameChangeMsg(jTextField2.getText().substring(6));
+            }
+            else if(jTextField2.getText().length()==6 && jTextField2.getText().substring(0,6).equals("/users")){
+                toSend = createListUsersMsg();
+            }
+            else{
+                toSend = createStandardMsg(jTextField2.getText());
+            }
+            
+            try {
+                out.writeObject(toSend);
+            } catch (IOException ex) {
+                Logger.getLogger(KomFrame.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            jTextField2.setText("");
+        }
+    }
+    
+    private Message createNameChangeMsg(String newName) {
+        return new Message(null, MsgType.USER_NAME_CHANGE, newName);
+    }
+    
+    private Message createListUsersMsg() {
+        return new Message(null, MsgType.USER_LIST, null);
+    }
+    
+    private Message createStandardMsg(String content) {
+        return new Message(null, MsgType.MESSAGE, content);
+    }
+    
     /**
      * @param args the command line arguments
      */

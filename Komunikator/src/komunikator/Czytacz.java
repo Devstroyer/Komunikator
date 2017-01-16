@@ -5,55 +5,68 @@
  */
 package komunikator;
 
-import java.awt.Color;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.StringTokenizer;
+import java.io.ObjectInputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JList;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
+import komunikator.messages.Message;
 
 /**
  *
  * @author Krzyś
  */
 public class Czytacz implements Runnable{
-    BufferedReader in;
+    ObjectInputStream in;
     JTextArea j;
-    public Czytacz(BufferedReader in, JTextArea j){
+    
+    public Czytacz(ObjectInputStream in, JTextArea j){
         this.j=j;
         this.in=in;
     }
+    
     @Override
     public void run() {
         while(true){
-            String fromServer;
+            Message fromServer;
             try {
-                if((fromServer=in.readLine())!=null){
-                    messageCheck(fromServer);
+                if((fromServer=(Message) in.readObject())!=null){
+                    reactToMessage(fromServer);
                 }
-            } catch (IOException ex) {
+            } catch (IOException | ClassNotFoundException | ClassCastException ex) {
                 Logger.getLogger(Czytacz.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
     
-    private void messageCheck(String message){
-        if(message.substring(0, 8).equals("message:")){
-            j.append(message.substring(8));
-            j.append("\n");
+    private void reactToMessage(Message msg){
+        // GUI nie jest bardzo ThreadSafe (TM), do poprawy, jakoś
+        // Wystarczyłby pewnie synchrtonized (j), ale to już mamy ;-)
+        
+        switch (msg.getType()) {
+            case MESSAGE:
+                String displayedMsg = String.format("%s: %s%n", 
+                        msg.getSenderName(), msg.getContent());
+                j.append(displayedMsg);
+                break;
+            case USER_LIST:   
+                String userList = String.format("Users: %s%n", msg.getContent());
+                j.append(userList);
+                break;
+            case NEW_USER:
+                String newUser = String.format("%s has connected%n", msg.getSenderName());
+                j.append(newUser);
+                break;
+            case USER_DEAD:
+                String dearDeparted = String.format("%s is no longer with us%n", msg.getSenderName());
+                j.append(dearDeparted);
+                break;
+            case USER_NAME_CHANGE:
+                String nameChange = String.format("%s changed nickname to %s%n", msg.getSenderName(), msg.getContent());
+                j.append(nameChange);
+                break;
         }
-        else if(message.substring(0, 6).equals("users:")){
-            String []users = message.substring(6).split(";;;");
-            for (String token : users)
-            {   
-                j.append("users: ");
-                j.append(token+";");
-            }
-            j.append("\n");
-        }
+        
         j.setCaretPosition(j.getDocument().getLength());
     }
 }
