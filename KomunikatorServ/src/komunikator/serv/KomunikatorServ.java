@@ -18,10 +18,12 @@ import java.util.List;
  */
 public class KomunikatorServ {
     public static final List<ClientThread> list = Collections.synchronizedList(new ArrayList<>());
+    public static final List<Room> roomList = Collections.synchronizedList(new ArrayList<>());
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException {
+        roomList.add(new Room());
         ServerSocket serverSocket = new ServerSocket(8080);
         try {
             System.out.println("Server started!");

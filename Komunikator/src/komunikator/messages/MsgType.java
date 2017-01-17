@@ -5,5 +5,7 @@ public enum MsgType {
     USER_NAME_CHANGE,
     USER_LIST,
     NEW_USER,
-    USER_DEAD
+    USER_DEAD,
+    ROOM_LIST,
+    CHANGE_ROOM
 }

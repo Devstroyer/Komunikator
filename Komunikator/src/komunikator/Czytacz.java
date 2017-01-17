@@ -7,8 +7,10 @@ package komunikator;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JComboBox;
 import javax.swing.JTextArea;
 import komunikator.messages.Message;
 
@@ -65,8 +67,21 @@ public class Czytacz implements Runnable{
                 String nameChange = String.format("%s changed nickname to %s%n", msg.getSenderName(), msg.getContent());
                 j.append(nameChange);
                 break;
+            case ROOM_LIST:
+                String roomList = String.format("Rooms: %s%n", msg.getContent());
+                //roomUpdater(msg.getContent());
+                j.append(roomList);
+                break;
         }
         
         j.setCaretPosition(j.getDocument().getLength());
+    }
+    
+    private void roomUpdater(String s){
+        String [] roomsData = s.split(", ");
+        for(int i=0;i<roomsData.length;i++){
+            String [] singleRoomData = roomsData[i].split(":");
+        }
+       
     }
 }

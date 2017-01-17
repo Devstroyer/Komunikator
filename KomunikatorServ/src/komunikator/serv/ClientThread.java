@@ -24,6 +24,7 @@ public class ClientThread implements Runnable{
     private final Socket socket;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
+    private Room currentRoom;
     
     public ClientThread(Socket socket) throws IOException{
         this.clientName="notSet";
@@ -32,17 +33,30 @@ public class ClientThread implements Runnable{
         this.in = new ObjectInputStream(socket.getInputStream());
         
         //Dodanie nowego uzytkownika i powiadomienie reszty
-        synchronized(KomunikatorServ.list) {
+        synchronized(KomunikatorServ.roomList) {
             // Whoooops?
             // https://stackoverflow.com/questions/3921616/leaking-this-in-constructor-warning#comment35214280_3921636
-            KomunikatorServ.list.add(this);
-            sendOut(createIJustJoinedMsg());
+            for(int i=0;i<KomunikatorServ.roomList.size();i++){
+                if(!KomunikatorServ.roomList.get(i).isFull()){
+                    currentRoom=KomunikatorServ.roomList.get(i);
+                    currentRoom.clientsList.add(this);
+                    sendOut(createIJustJoinedMsg());
+                }    
+            }
+            if(currentRoom==null){
+                    currentRoom= new Room();
+                    KomunikatorServ.roomList.add(currentRoom);
+                    currentRoom.clientsList.add(this);
+                    sendOut(createIJustJoinedMsg());
+            }
+            //KomunikatorServ.list.add(this);
+            //sendOut(createIJustJoinedMsg());
         }
     }
 
     @Override
     public void run() {
-            
+        send(createRoomListMsg());
         while(true){
             if(in==null){
                 break;              
@@ -54,7 +68,7 @@ public class ClientThread implements Runnable{
                 }
             } catch (IOException ex) {    
                 //Usuniecie nowego uzytkownika i powiadomienie reszty oraz zakonczenie watku
-                KomunikatorServ.list.remove(this);
+                currentRoom.clientsList.remove(this);
                 sendOut(createUserDisconnectedMsg());
                 System.out.println(ex);
                 break;
@@ -77,6 +91,12 @@ public class ClientThread implements Runnable{
             case USER_LIST:
                 sendOut(createUsernameListMsg());
                 break;
+            case ROOM_LIST:
+                send(createRoomListMsg());
+                break;
+            case CHANGE_ROOM:
+                parseToRoomId(msg.getContent());
+                break;
             default:
                 sendOut(msg);
                 break;
@@ -84,21 +104,56 @@ public class ClientThread implements Runnable{
     }
     
     private Message createUsernameListMsg() {
-        synchronized(KomunikatorServ.list) {
-            String users = KomunikatorServ.list.stream()
+        synchronized(currentRoom.clientsList) {
+            String users =currentRoom.clientsList.stream()
                     .map(client -> client.getName())
                     .collect(Collectors.joining(", "));
             return new Message(clientName, MsgType.USER_LIST, users);
         }
     }
     
+    private void parseToRoomId(String textId){
+        try{
+            long id=Long.parseLong(textId);
+            tryChangeRoom(id);
+        }
+        catch(Exception e){}
+    }
+    private void tryChangeRoom(long id){
+        for(int i=0;i<KomunikatorServ.roomList.size();i++){
+            if(KomunikatorServ.roomList.get(i).getRoomId()==id && !KomunikatorServ.roomList.get(i).isFull()){
+                currentRoom.clientsList.remove(this);
+                currentRoom =KomunikatorServ.roomList.get(i);
+                currentRoom.clientsList.add(this);
+                send(createInfoMsg("You've changed your room"));
+            }
+            else{
+                send(createInfoMsg("You haven't changed your room"));
+            }
+        }
+    }
+    
+    private Message createInfoMsg(String info){
+        return new Message("Server",MsgType.MESSAGE,info);
+    }
+    
+    private Message createRoomListMsg() {
+        synchronized(currentRoom.clientsList) {
+            String rooms =KomunikatorServ.roomList.stream()
+                    .map(room -> Long.toString(room.getRoomId())+":"+room.getRoomName())
+                    .collect(Collectors.joining(", "));
+            
+            return new Message(clientName, MsgType.ROOM_LIST, rooms);
+        }
+    }
+    
     private Message createIJustJoinedMsg() {
-        return new Message(clientName, MsgType.NEW_USER, null);
+        return new Message(clientName, MsgType.NEW_USER,null);
     }
     
     private void sendOut(Message msg) {
-        synchronized(KomunikatorServ.list) {
-            for (ClientThread client : KomunikatorServ.list) {
+        synchronized(currentRoom.clientsList) {
+            for (ClientThread client : currentRoom.clientsList) {
                 client.send(msg);
             }
         }
