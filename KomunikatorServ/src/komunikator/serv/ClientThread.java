@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -25,38 +26,20 @@ public class ClientThread implements Runnable{
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
     private Room currentRoom;
+    private final Semaphore countingSemaphore;
     
-    public ClientThread(Socket socket) throws IOException{
+    public ClientThread(Socket socket, Semaphore countingSemaphore) throws IOException{
+        this.countingSemaphore = countingSemaphore;
         this.clientName="notSet";
         this.socket=socket;
         this.out = new ObjectOutputStream(socket.getOutputStream());
         this.in = new ObjectInputStream(socket.getInputStream());
-        
-        //Dodanie nowego uzytkownika i powiadomienie reszty
-        synchronized(KomunikatorServ.roomList) {
-            // Whoooops?
-            // https://stackoverflow.com/questions/3921616/leaking-this-in-constructor-warning#comment35214280_3921636
-            for(int i=0;i<KomunikatorServ.roomList.size();i++){
-                if(!KomunikatorServ.roomList.get(i).isFull()){
-                    currentRoom=KomunikatorServ.roomList.get(i);
-                    currentRoom.clientsList.add(this);
-                    sendOut(createIJustJoinedMsg());
-                    break;
-                }    
-            }
-            if(currentRoom==null){
-                    currentRoom= new Room();
-                    KomunikatorServ.roomList.add(currentRoom);
-                    currentRoom.clientsList.add(this);
-                    sendOut(createIJustJoinedMsg());
-            }
-            //KomunikatorServ.list.add(this);
-            //sendOut(createIJustJoinedMsg());
-        }
     }
 
     @Override
-    public void run() {
+    public void run() {        
+        //Dodanie nowego uzytkownika i powiadomienie reszty
+        joinFirstAvailableRoom();
         send(createRoomListMsg());
         while(true){
             if(in==null){
@@ -68,15 +51,45 @@ public class ClientThread implements Runnable{
                     reactToMessage(fromClient);                          
                 }
             } catch (IOException ex) {    
-                //Usuniecie nowego uzytkownika i powiadomienie reszty oraz zakonczenie watku
-                currentRoom.clientsList.remove(this);
-                sendOut(createUserDisconnectedMsg());
+                try {
+                    leave();
+                } catch (InterruptedException ex1) {
+                    Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex1);
+                }
                 System.out.println(ex);
                 break;
             } catch (ClassNotFoundException | ClassCastException ex) {
                 Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+    
+    private void joinFirstAvailableRoom() {
+        synchronized(KomunikatorServ.roomList) {
+            for(int i=0;i<KomunikatorServ.roomList.size();i++){
+                if(!KomunikatorServ.roomList.get(i).isFull()){
+                    currentRoom=KomunikatorServ.roomList.get(i);
+                    currentRoom.clientsList.add(this);
+                    sendOut(createIJustJoinedMsg());
+                    break;
+                }    
+            }
+            
+            if(currentRoom==null){
+                    currentRoom= new Room();
+                    KomunikatorServ.roomList.add(currentRoom);
+                    currentRoom.clientsList.add(this);
+                    sendOut(createIJustJoinedMsg());
+            }
+        }
+    }
+    
+    private void leave() throws InterruptedException {
+        countingSemaphore.acquire();
+        KomunikatorServ.numberOfUsers--;
+        countingSemaphore.release();
+        currentRoom.clientsList.remove(this);
+        sendOut(createUserDisconnectedMsg());
     }
     
     //Sprawdzacz i reagowacz na co tam takiego nam przysłali ciekawego
@@ -87,7 +100,6 @@ public class ClientThread implements Runnable{
                 if (tryRenameClient(msg.getContent())) {
                     sendOut(msg);                    
                 }
-                // else?
                 break;
             case USER_LIST:
                 sendOut(createUsernameListMsg());
@@ -105,8 +117,7 @@ public class ClientThread implements Runnable{
                 sendOut(msg);
                 break;
         }
-    }
-    
+    }    
     
     private void createRoom(String s){
         KomunikatorServ.roomList.add(new Room(s));

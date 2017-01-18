@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import komunikator.messages.Message;
 
 /**
  *
@@ -57,6 +58,15 @@ public class Room {
         this.roomId=Room.id;
         Room.incrementId();
     }
+    
+    public void sendToAllUsers(Message msg) {
+        synchronized (clientsList) {
+            for (ClientThread ct : clientsList) {
+                ct.send(msg);
+            }
+        }
+    }
+    
     public long getRoomId(){
         return this.roomId;
     }

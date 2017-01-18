@@ -11,6 +11,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JTextArea;
 import komunikator.messages.Message;
 
@@ -21,12 +22,14 @@ import komunikator.messages.Message;
 public class Czytacz implements Runnable{
     ObjectInputStream in;
     JTextArea j;
+    JLabel userCounter;
     RoomListComponent rlc;
     
-    public Czytacz(ObjectInputStream in, JTextArea j, RoomListComponent rlc){
+    public Czytacz(ObjectInputStream in, JTextArea j, JLabel userCounter, RoomListComponent rlc){
         this.j=j;
         this.in=in;
         this.rlc=rlc;
+        this.userCounter = userCounter;
     }
     
     @Override
@@ -43,10 +46,7 @@ public class Czytacz implements Runnable{
         }
     }
     
-    private void reactToMessage(Message msg){
-        // GUI nie jest bardzo ThreadSafe (TM), do poprawy, jakoś
-        // Wystarczyłby pewnie synchrtonized (j), ale to już mamy ;-)
-        
+    private void reactToMessage(Message msg){        
         switch (msg.getType()) {
             case MESSAGE:
                 String displayedMsg = String.format("%s: %s%n", 
@@ -72,6 +72,10 @@ public class Czytacz implements Runnable{
             case ROOM_LIST:
                 roomUpdater(msg.getContent());
                 break;
+            case NUMBER_OF_USERS:
+                userCounter.setText(msg.getContent());
+                break;
+                
         }
         
         j.setCaretPosition(j.getDocument().getLength());

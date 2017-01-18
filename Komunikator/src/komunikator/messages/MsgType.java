@@ -8,5 +8,6 @@ public enum MsgType {
     USER_DEAD,
     ROOM_LIST,
     CHANGE_ROOM,
-    CREATE_ROOM
+    CREATE_ROOM,    
+    NUMBER_OF_USERS
 }

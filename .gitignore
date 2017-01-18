@@ -27,3 +27,5 @@ nbdist/
 hs_err_pid*
 
 # End of https://www.gitignore.io/api/netbeans,java
+/KomunikatorServ/nbproject/private/
+/Komunikator/nbproject/private/
