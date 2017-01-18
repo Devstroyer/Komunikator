@@ -21,10 +21,12 @@ import komunikator.messages.Message;
 public class Czytacz implements Runnable{
     ObjectInputStream in;
     JTextArea j;
+    RoomListComponent rlc;
     
-    public Czytacz(ObjectInputStream in, JTextArea j){
+    public Czytacz(ObjectInputStream in, JTextArea j, RoomListComponent rlc){
         this.j=j;
         this.in=in;
+        this.rlc=rlc;
     }
     
     @Override
@@ -68,9 +70,7 @@ public class Czytacz implements Runnable{
                 j.append(nameChange);
                 break;
             case ROOM_LIST:
-                String roomList = String.format("Rooms: %s%n", msg.getContent());
-                //roomUpdater(msg.getContent());
-                j.append(roomList);
+                roomUpdater(msg.getContent());
                 break;
         }
         
@@ -79,9 +79,16 @@ public class Czytacz implements Runnable{
     
     private void roomUpdater(String s){
         String [] roomsData = s.split(", ");
+        String [] roomsNames = new String[roomsData.length];
+        String [] roomsIds = new String[roomsData.length];
         for(int i=0;i<roomsData.length;i++){
             String [] singleRoomData = roomsData[i].split(":");
+            if(singleRoomData.length>=2){
+                roomsNames[i]= singleRoomData[1];
+                roomsIds[i]= singleRoomData[0];
+            }
         }
+        rlc.setData(roomsNames, roomsIds);
        
     }
 }

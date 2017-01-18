@@ -41,6 +41,7 @@ public class ClientThread implements Runnable{
                     currentRoom=KomunikatorServ.roomList.get(i);
                     currentRoom.clientsList.add(this);
                     sendOut(createIJustJoinedMsg());
+                    break;
                 }    
             }
             if(currentRoom==null){
@@ -97,12 +98,20 @@ public class ClientThread implements Runnable{
             case CHANGE_ROOM:
                 parseToRoomId(msg.getContent());
                 break;
+            case CREATE_ROOM:
+                createRoom(msg.getContent());
+                break;
             default:
                 sendOut(msg);
                 break;
         }
     }
     
+    
+    private void createRoom(String s){
+        KomunikatorServ.roomList.add(new Room(s));
+        send(createRoomListMsg());
+    }
     private Message createUsernameListMsg() {
         synchronized(currentRoom.clientsList) {
             String users =currentRoom.clientsList.stream()
@@ -122,13 +131,14 @@ public class ClientThread implements Runnable{
     private void tryChangeRoom(long id){
         for(int i=0;i<KomunikatorServ.roomList.size();i++){
             if(KomunikatorServ.roomList.get(i).getRoomId()==id && !KomunikatorServ.roomList.get(i).isFull()){
-                currentRoom.clientsList.remove(this);
-                currentRoom =KomunikatorServ.roomList.get(i);
-                currentRoom.clientsList.add(this);
-                send(createInfoMsg("You've changed your room"));
-            }
-            else{
-                send(createInfoMsg("You haven't changed your room"));
+                if(currentRoom!=KomunikatorServ.roomList.get(i)){
+                    sendOut(createInfoMsg(this.getName()+" has left the room"));
+                    currentRoom.clientsList.remove(this);
+                    currentRoom =KomunikatorServ.roomList.get(i);
+                    currentRoom.clientsList.add(this);
+                    send(createInfoMsg("You've changed your room to "+currentRoom.getRoomName()));
+                    sendOut(createIJustJoinedMsg()); 
+                }
             }
         }
     }

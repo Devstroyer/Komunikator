@@ -20,7 +20,7 @@ public class Room {
     public final List<ClientThread> clientsList = Collections.synchronizedList(new ArrayList<>());
     private int capacity;
     private String roomName;
-    private long roomId;
+    private volatile long roomId;
     private final static int defaultCapacity=3;
     
     public Room(){
