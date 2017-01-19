@@ -117,7 +117,12 @@ public class Czytacz implements Runnable{
                 clientsIds[i]= singleRoomData[0];
             }
         }
-        clc.setData(clientsNames, clientsIds);
+        clc.clientsLock.lock();
+        try {
+            clc.setData(clientsNames, clientsIds);
+        } finally {
+            clc.clientsLock.unlock();
+        }
        
     }
 }

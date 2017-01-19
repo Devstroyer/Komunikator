@@ -8,19 +8,13 @@ package komunikator;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Image;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
-import komunikator.messages.Message;
-import komunikator.messages.MsgType;
 
 /**
  *
@@ -29,6 +23,7 @@ import komunikator.messages.MsgType;
 public class ClientsListComponent extends JComponent implements MouseListener,MouseMotionListener {
     public static final int WIDTH = 100;
     public static final int HEIGHT = 100;
+    public final ReentrantLock clientsLock;
     private BufferedImage img;
     
     private int mouseX;
@@ -45,6 +40,7 @@ public class ClientsListComponent extends JComponent implements MouseListener,Mo
     
     public ClientsListComponent(){
         super();
+        clientsLock = new ReentrantLock();
         setPreferredSize(new Dimension(WIDTH,HEIGHT));
         setFocusable(true);
         addMouseMotionListener(this);
@@ -69,26 +65,30 @@ public class ClientsListComponent extends JComponent implements MouseListener,Mo
         
         currentHighlighted = mouseY/roomButtonHeight;
         
-        if(clientsNames!=null){
-             for(int i=0;i<clientsNames.length;i++){
-                 if(i%2==0)
-                     if(i==currentHighlighted)
-                        g.setColor(new Color(140,140,150));
-                     else
-                        g.setColor(new Color(130,130,150)); 
-                 else
-                     if(i==currentHighlighted)
-                        g.setColor(new Color(120,120,140));
-                     else
-                        g.setColor(new Color(110,110,130)); 
-                 if(i==currentChoosed)
-                     g.setColor(new Color(50,160,50));
-                 g.fillRect(0, i*roomButtonHeight, this.getWidth(), roomButtonHeight);
-                 g.setColor(new Color(255,255,255));
-                 g.drawString(clientsNames[i],0, ((i+1)*roomButtonHeight)-roomButtonHeight/2);
-             }
+        clientsLock.lock();
+        try {
+            if(clientsNames!=null){
+                for(int i=0;i<clientsNames.length;i++){
+                    if(i%2==0)
+                        if(i==currentHighlighted)
+                            g.setColor(new Color(140,140,150));
+                        else
+                            g.setColor(new Color(130,130,150));
+                    else
+                        if(i==currentHighlighted)
+                            g.setColor(new Color(120,120,140));
+                        else
+                            g.setColor(new Color(110,110,130));
+                    if(i==currentChoosed)
+                        g.setColor(new Color(50,160,50));
+                    g.fillRect(0, i*roomButtonHeight, this.getWidth(), roomButtonHeight);
+                    g.setColor(new Color(255,255,255));
+                    g.drawString(clientsNames[i],0, ((i+1)*roomButtonHeight)-roomButtonHeight/2);
+                }
+            }
+        } finally {
+            clientsLock.unlock();
         }
-         
     }
     
     public void setData(String[] clientsNames,String[] clientsIds){
