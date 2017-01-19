@@ -28,6 +28,7 @@ public class KomunikatorServ {
     public static final List<Room> roomList = Collections.synchronizedList(new ArrayList<>());
     public static volatile long numberOfUsers;
     private static Semaphore counterSemaphore;
+    private static long clientID;
     
     /**
      * @param args the command line arguments
@@ -35,16 +36,18 @@ public class KomunikatorServ {
     public static void main(String[] args) throws IOException {
         counterSemaphore = new Semaphore(1);
         numberOfUsers = 0;
-        roomList.add(new Room());
+        roomList.add(new Room("First Room"));
+        clientID=1;
         scheduleUserNumberUpdates();
         ServerSocket serverSocket = new ServerSocket(8080);
         try {
             System.out.println("Server started!");
             while(true){
                 Socket clientSocket = serverSocket.accept();
-                ClientThread clientThread = new ClientThread(clientSocket, counterSemaphore);
+                ClientThread clientThread = new ClientThread(clientID,clientSocket, counterSemaphore);
                 Thread watek = new Thread(clientThread);
                 incrementNumberOfUsers();
+                clientID++;
                 watek.start();
             }
         }

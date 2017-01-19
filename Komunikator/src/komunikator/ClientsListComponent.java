@@ -26,7 +26,7 @@ import komunikator.messages.MsgType;
  *
  * @author Krzyś
  */
-public class RoomListComponent extends JComponent implements MouseListener,MouseMotionListener {
+public class ClientsListComponent extends JComponent implements MouseListener,MouseMotionListener {
     public static final int WIDTH = 100;
     public static final int HEIGHT = 100;
     private BufferedImage img;
@@ -35,15 +35,15 @@ public class RoomListComponent extends JComponent implements MouseListener,Mouse
     private int mouseY;
     private int roomButtonHeight;
     private int currentHighlighted;
+    private int currentChoosed;
     
-    private ObjectOutputStream oos;
     private JScrollPane sp;
     
     
-    private String[] roomNames;
-    private String[] roomIds;
+    private String[] clientsNames;
+    private String[] clientsIds;
     
-    public RoomListComponent(){
+    public ClientsListComponent(){
         super();
         setPreferredSize(new Dimension(WIDTH,HEIGHT));
         setFocusable(true);
@@ -54,13 +54,11 @@ public class RoomListComponent extends JComponent implements MouseListener,Mouse
         g.setColor(new Color(240,240,240));
         g.fillRect(0, 0, img.getWidth(), img.getHeight());
         currentHighlighted=0;
+        currentChoosed=-1;
         roomButtonHeight=30;
         
     }
     
-    public void setObjectOutputStream(ObjectOutputStream oos){
-        this.oos = oos;
-    }
     
     public void setScrollignPane(JScrollPane sp){
         this.sp = sp;
@@ -71,8 +69,8 @@ public class RoomListComponent extends JComponent implements MouseListener,Mouse
         
         currentHighlighted = mouseY/roomButtonHeight;
         
-        if(roomNames!=null){
-             for(int i=0;i<roomNames.length;i++){
+        if(clientsNames!=null){
+             for(int i=0;i<clientsNames.length;i++){
                  if(i%2==0)
                      if(i==currentHighlighted)
                         g.setColor(new Color(140,140,150));
@@ -83,19 +81,21 @@ public class RoomListComponent extends JComponent implements MouseListener,Mouse
                         g.setColor(new Color(120,120,140));
                      else
                         g.setColor(new Color(110,110,130)); 
+                 if(i==currentChoosed)
+                     g.setColor(new Color(50,160,50));
                  g.fillRect(0, i*roomButtonHeight, this.getWidth(), roomButtonHeight);
                  g.setColor(new Color(255,255,255));
-                 g.drawString(roomNames[i],0, ((i+1)*roomButtonHeight)-roomButtonHeight/2);
+                 g.drawString(clientsNames[i],0, ((i+1)*roomButtonHeight)-roomButtonHeight/2);
              }
         }
          
     }
     
-    public void setData(String[] roomNames,String[] roomIds){
-        this.roomIds=roomIds;
-        this.roomNames=roomNames;
+    public void setData(String[] clientsNames,String[] clientsIds){
+        this.clientsIds=clientsIds;
+        this.clientsNames=clientsNames;
         repaint();
-        this.setPreferredSize(new Dimension(this.getWidth(),roomButtonHeight*roomIds.length));
+        this.setPreferredSize(new Dimension(this.getWidth(),roomButtonHeight*clientsIds.length));
         if(sp!=null){
             sp.revalidate();
             sp.repaint();
@@ -116,18 +116,26 @@ public class RoomListComponent extends JComponent implements MouseListener,Mouse
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        if(roomIds!=null && currentHighlighted<roomIds.length){
+        if(clientsIds!=null && currentHighlighted<clientsIds.length){
             //System.out.println(roomIds[currentHighlighted]);
-            if(oos!=null){
-                try {
-                    oos.writeObject(new Message(null,MsgType.CHANGE_ROOM,roomIds[currentHighlighted]));
-                } catch (IOException ex) {
-                    Logger.getLogger(RoomListComponent.class.getName()).log(Level.SEVERE, null, ex);
-                }
+            if(currentChoosed==currentHighlighted){
+                currentChoosed=-1;
             }
-            
+            else{
+                currentChoosed=currentHighlighted;
+            }
+            repaint();
         }
-        
+    }
+    
+    public boolean isSomethingChoosed(){
+        return (currentChoosed!=-1 && clientsIds.length>currentChoosed);
+    }
+    
+    public String getCurrentId(){
+        if(clientsIds.length>currentChoosed)
+            return (clientsIds[currentChoosed]);
+        return "0";
     }
 
     @Override

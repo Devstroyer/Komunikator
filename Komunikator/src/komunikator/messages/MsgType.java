@@ -9,5 +9,7 @@ public enum MsgType {
     ROOM_LIST,
     CHANGE_ROOM,
     CREATE_ROOM,    
-    NUMBER_OF_USERS
+    NUMBER_OF_USERS,
+    ALL_USERS_LIST,
+    DIRECT_MESSAGE
 }

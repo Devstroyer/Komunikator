@@ -20,15 +20,17 @@ import komunikator.messages.Message;
  * @author Krzyś
  */
 public class Czytacz implements Runnable{
-    ObjectInputStream in;
-    JTextArea j;
-    JLabel userCounter;
-    RoomListComponent rlc;
+    private ObjectInputStream in;
+    private JTextArea j;
+    private JLabel userCounter;
+    private RoomListComponent rlc;
+    private ClientsListComponent clc;
     
-    public Czytacz(ObjectInputStream in, JTextArea j, JLabel userCounter, RoomListComponent rlc){
+    public Czytacz(ObjectInputStream in, JTextArea j, JLabel userCounter, RoomListComponent rlc, ClientsListComponent clc){
         this.j=j;
         this.in=in;
         this.rlc=rlc;
+        this.clc=clc;
         this.userCounter = userCounter;
     }
     
@@ -75,6 +77,14 @@ public class Czytacz implements Runnable{
             case NUMBER_OF_USERS:
                 userCounter.setText(msg.getContent());
                 break;
+            case ALL_USERS_LIST:
+                clientsUpdater(msg.getContent());
+                break;
+            case DIRECT_MESSAGE:
+                String displayedDirectMsg = String.format("Private from %s: %s%n", 
+                        msg.getSenderName(), msg.getContent());
+                j.append(displayedDirectMsg);
+                break;
                 
         }
         
@@ -93,6 +103,21 @@ public class Czytacz implements Runnable{
             }
         }
         rlc.setData(roomsNames, roomsIds);
+       
+    }
+    
+    private void clientsUpdater(String s){
+        String [] clientsData = s.split(", ");
+        String [] clientsNames = new String[clientsData.length];
+        String [] clientsIds = new String[clientsData.length];
+        for(int i=0;i<clientsData.length;i++){
+            String [] singleRoomData = clientsData[i].split(":");
+            if(singleRoomData.length>=2){
+                clientsNames[i]= singleRoomData[1];
+                clientsIds[i]= singleRoomData[0];
+            }
+        }
+        clc.setData(clientsNames, clientsIds);
        
     }
 }
