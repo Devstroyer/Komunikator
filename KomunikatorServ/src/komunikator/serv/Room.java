@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import komunikator.messages.Message;
 
 /**
@@ -67,14 +68,22 @@ public class Room {
         }
     }
     
+    public String getSendableUserList() {
+        synchronized (clientsList) {
+            return clientsList.stream()
+                    .map(client -> Long.toString(client.getClientId())+":"+client.getName())
+                    .collect(Collectors.joining(", "));
+        }
+    }
+    
     public long getRoomId(){
         return this.roomId;
     }
-    public synchronized boolean isFull(){
+    public boolean isFull(){
         return clientsList.size()==capacity;
     }
     
-    public synchronized String getRoomName(){
+    public String getRoomName(){
         return this.roomName;
     }
     

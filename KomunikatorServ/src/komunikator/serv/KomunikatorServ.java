@@ -63,7 +63,7 @@ public class KomunikatorServ {
     }
     
     private static void scheduleUserNumberUpdates() {
-        ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
+        ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
         exec.scheduleAtFixedRate(new Runnable() {
             public void run() {
                 Message numberOfUsers = new Message("Server", MsgType.NUMBER_OF_USERS, 

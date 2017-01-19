@@ -99,32 +99,22 @@ public class ClientThread implements Runnable{
     }
     
     private void refreshUserListForAll(){
-        synchronized(currentRoom.clientsList) {
+        synchronized(KomunikatorServ.roomList) {
                 String clients=KomunikatorServ.roomList.stream()
-                    .map(room -> room.clientsList.stream()
-                            .map(client -> Long.toString(client.getClientId())+":"+client.getName())
-                            .collect(Collectors.joining(", ")))
+                    .map(room -> room.getSendableUserList())
                         .collect(Collectors.joining(", "));
                 Message msg =new Message(null, MsgType.ALL_USERS_LIST, clients);
-                KomunikatorServ.roomList.stream().forEach((Room room) -> {
-                    room.clientsList.stream().forEach((client) -> {
-                        client.send(msg);
-                    });
-                });        
+                KomunikatorServ.roomList.stream().forEach((Room room) -> room.sendToAllUsers(msg));    
         }  
     }
     
     private void refreshRoomListForAll() {
-        synchronized(currentRoom.clientsList) {
+        synchronized(KomunikatorServ.roomList) {
             String rooms =KomunikatorServ.roomList.stream()
                     .map(room -> Long.toString(room.getRoomId())+":"+room.getRoomName())
                     .collect(Collectors.joining(", "));
             Message msg =new Message(null, MsgType.ROOM_LIST, rooms);
-                KomunikatorServ.roomList.stream().forEach((Room room) -> {
-                    room.clientsList.stream().forEach((client) -> {
-                        client.send(msg);
-                    });
-                });
+            KomunikatorServ.roomList.stream().forEach((Room room) -> room.sendToAllUsers(msg));
         }
     }
     
@@ -199,12 +189,16 @@ public class ClientThread implements Runnable{
     }
     
     private void createPrivateMessage(Message msg){
-        for(Room room : KomunikatorServ.roomList){
-            for(ClientThread client : room.clientsList){
-                if(client.getClientId()==msg.getReciverId()){
-                    send(new Message("Private to "+client.getName(),MsgType.MESSAGE,msg.getContent()));
-                    client.send(new Message(getName(),getClientId(),client.getClientId(),MsgType.DIRECT_MESSAGE,msg.getContent()));
-                    break;
+        synchronized (KomunikatorServ.roomList) {
+            for(Room room : KomunikatorServ.roomList){
+                synchronized (room.clientsList) {
+                    for(ClientThread client : room.clientsList){
+                        if(client.getClientId()==msg.getReciverId()){
+                            send(new Message("Private to "+client.getName(),MsgType.MESSAGE,msg.getContent()));
+                            client.send(new Message(getName(),getClientId(),client.getClientId(),MsgType.DIRECT_MESSAGE,msg.getContent()));
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -215,7 +209,7 @@ public class ClientThread implements Runnable{
     }
     
     private Message createRoomListMsg() {
-        synchronized(currentRoom.clientsList) {
+        synchronized(KomunikatorServ.roomList) {
             String rooms =KomunikatorServ.roomList.stream()
                     .map(room -> Long.toString(room.getRoomId())+":"+room.getRoomName())
                     .collect(Collectors.joining(", "));
@@ -225,13 +219,11 @@ public class ClientThread implements Runnable{
     }
     
      private Message createAllUsernamesListMsg() {
-        synchronized(currentRoom.clientsList) {
-                String clients=KomunikatorServ.roomList.stream()
-                    .map(room -> room.clientsList.stream()
-                            .map(client -> Long.toString(client.getClientId())+":"+client.getName())
-                            .collect(Collectors.joining(", ")))
-                        .collect(Collectors.joining(", "));
-                return new Message(clientName, MsgType.ALL_USERS_LIST, clients);
+        synchronized(KomunikatorServ.roomList) {
+            String clients=KomunikatorServ.roomList.stream()
+                .map(room -> room.getSendableUserList())
+                    .collect(Collectors.joining(", "));
+            return new Message(clientName, MsgType.ALL_USERS_LIST, clients);
         }     
     }
     
@@ -250,7 +242,6 @@ public class ClientThread implements Runnable{
     
     private boolean tryRenameClient(String newName) {
         boolean success = false;
-        // Tu się może trochę głupio zrobić, jak dwóch postanowi mieć tą samą nazwę...
         if (newName != null && newName.length() > 1) {
             clientName = newName;
             success = true;
