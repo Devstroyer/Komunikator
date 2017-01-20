@@ -174,15 +174,17 @@ public class ClientThread implements Runnable{
         catch(Exception e){}
     }
     private void tryChangeRoom(long id){
-        for(int i=0;i<KomunikatorServ.roomList.size();i++){
-            if(KomunikatorServ.roomList.get(i).getRoomId()==id && !KomunikatorServ.roomList.get(i).isFull()){
-                if(currentRoom!=KomunikatorServ.roomList.get(i)){
-                    sendOut(createInfoMsg(this.getName()+" has left the room"));
-                    currentRoom.clientsList.remove(this);
-                    currentRoom =KomunikatorServ.roomList.get(i);
-                    currentRoom.clientsList.add(this);
-                    send(createInfoMsg("You've changed your room to "+currentRoom.getRoomName()));
-                    sendOut(createIJustJoinedMsg()); 
+        synchronized (KomunikatorServ.roomList) {
+            for(int i=0;i<KomunikatorServ.roomList.size();i++){
+                if(KomunikatorServ.roomList.get(i).getRoomId()==id && !KomunikatorServ.roomList.get(i).isFull()){
+                    if(currentRoom!=KomunikatorServ.roomList.get(i)){
+                        sendOut(createInfoMsg(this.getName()+" has left the room"));
+                        currentRoom.clientsList.remove(this);
+                        currentRoom =KomunikatorServ.roomList.get(i);
+                        currentRoom.clientsList.add(this);
+                        send(createInfoMsg("You've changed your room to "+currentRoom.getRoomName()));
+                        sendOut(createIJustJoinedMsg()); 
+                    }
                 }
             }
         }

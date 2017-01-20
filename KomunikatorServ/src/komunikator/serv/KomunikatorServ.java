@@ -24,7 +24,6 @@ import komunikator.messages.MsgType;
  * @author Krzyś
  */
 public class KomunikatorServ {
-    public static final List<ClientThread> list = Collections.synchronizedList(new ArrayList<>());
     public static final List<Room> roomList = Collections.synchronizedList(new ArrayList<>());
     public static volatile long numberOfUsers;
     private static Semaphore counterSemaphore;
