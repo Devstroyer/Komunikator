@@ -209,6 +209,7 @@ public class KomFrame extends javax.swing.JFrame {
             in = new ObjectInputStream(soc.getInputStream());
             watek = new Thread(new Czytacz(in,jTextArea1,jUserCounterObviously,roomListComponent1,clientsListComponent));
             watek.start();
+            jTextArea1.append("To change name write\n/name <user name>\n");
             } catch (IOException ex) {
                 Logger.getLogger(KomFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -269,11 +270,7 @@ public class KomFrame extends javax.swing.JFrame {
     private void sendCurrentMessage() {
         if (!jTextField2.getText().isEmpty()) {
             Message toSend;
-            if(clientsListComponent.isSomethingChoosed()){
-                toSend = createPrivateMsg(jTextField2.getText());
-                System.out.println(toSend.getType());
-            }
-            else if(jTextField2.getText().length()>6 && jTextField2.getText().substring(0,6).equals("/name ")){
+            if(jTextField2.getText().length()>6 && jTextField2.getText().substring(0,6).equals("/name ")){
                 toSend = createNameChangeMsg(jTextField2.getText().substring(6));
                 setTitle(jTextField2.getText().substring(6));
             }
@@ -286,8 +283,8 @@ public class KomFrame extends javax.swing.JFrame {
             else if(jTextField2.getText().length()==9 && jTextField2.getText().substring(0,9).equals("/allusers")){
                 toSend = createAllUsersListRoomsMsg();
             }
-            else if(jTextField2.getText().length()>6 && jTextField2.getText().substring(0,6).equals("/room ")){
-                toSend = changeRoomMsg(jTextField2.getText().substring(6));
+            else if(clientsListComponent.isSomethingChoosed()){
+                toSend = createPrivateMsg(jTextField2.getText());
             }
             else{
                 toSend = createStandardMsg(jTextField2.getText());

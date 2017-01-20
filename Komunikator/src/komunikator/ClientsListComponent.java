@@ -80,7 +80,7 @@ public class ClientsListComponent extends JComponent implements MouseListener,Mo
                         else
                             g.setColor(new Color(110,110,130));
                     if(i==currentChoosed)
-                        g.setColor(new Color(50,160,50));
+                        g.setColor(new Color(127,180,95));
                     g.fillRect(0, i*roomButtonHeight, this.getWidth(), roomButtonHeight);
                     g.setColor(new Color(255,255,255));
                     g.drawString(clientsNames[i],0, ((i+1)*roomButtonHeight)-roomButtonHeight/2);
